@@ -164,3 +164,6 @@ cython_debug/
 *.dist/
 *.onefile-build/
 *.bin
+
+# VSCode
+.vscode/

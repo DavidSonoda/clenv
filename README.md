@@ -16,7 +16,6 @@ pip install clenv
 ```
 
 
-
 ## Usage
 
 ### Subcommand `config`
@@ -56,7 +55,33 @@ Then paste your multi-line configuration generated through clearML server.
 clenv user genpass <user_name>
 ```
 
+### Subcommand `task`
 
+> Note: This command only support git repos for now. The project name of the task created on the ClearML server will be the same as the git repo name. So please make sure you have a meaningful, easy to read git repo name.
+
+#### Execute a task remotely on ClearML server
+
+```bash
+clenv task exec
+```
+
+It will prompt you to select an available queue, correct task type, your entrypoint script path and input the task name.
+
+![clenv-task-exec-1](./static/clenv-task-exec-1.png)
+
+After inputting all the required configs, it will ask you whether to save the configs. By typing 'y', the config will be saved. When you execute `clenv task exec` next time in the same repo, it will load the saved configs and skip the config input process. However, it will still ask you for confirmation before submitting the task.
+
+#### Ignore the saved run configs when starting a new execution
+
+If you want to ignore the old run configs and freshly start a new execution, you can run:
+
+```bash
+clenv task exec -N
+```
+
+The `-N` option will tell `clenv` to ignore the config file you have, and prompt you to input all the configs again.
+
+An alternative way of doing that is to delete the config file manually, which is located at `./.clenv/task_template.json`. Then running `clenv task exec` again will start a fresh execution as well.
 
 ## Examples
 
@@ -65,34 +90,41 @@ clenv user genpass <user_name>
 #### Initialize profiles
 
 ```bash
-$ ./clearenvoy.bin config list
+$ clenv config list
 # Input a name for your current profile
 ```
 
 #### Create a new profile
 
 ```bash
-$ ./clearenvoy.bin config create brainco
+$ clenv config create brainco
 ```
 
 #### Reinit the profile credentials
 
 ```bash
-$ ./clearenvoy.bin config reinit brainco
+$ clenv config reinit brainco
 ```
 
 #### Checkout the new profile
 
 ```bash
-$ ./clearenvoy.bin config checkout brainco
+$ clenv config checkout brainco
 ```
 
 ## Roadmap
-- [x] Config profile management
-- [x] BCrypt password generation
-- [ ] Support custom config file path
-- [ ] Server side utils and config management
-- [ ] ClearML Agent side utils and config management
+- Config management
+  - [x] Config profile management
+  - [ ] Support custom config file path
+- Privately hosted server management
+  - [x] BCrypt password generation (Feature to be deprecated when more sophisticated user management is implemented)
+  - [ ] Server side utils and config management
+  - [ ] ClearML Agent side utils and config management
+- Remote task management
+  - [x] A user friendly remote task execution wizard
+
+
+
 
 ## Disclaimer & License
 This project is not affiliated with Allegro AI, Inc. in any way. It is an independent and unofficial software. It's licensed under the MIT license.
