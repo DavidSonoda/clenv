@@ -12,6 +12,11 @@ from pyhocon import ConfigFactory, HOCONConverter
 
 class ConfigManager:
     def __init__(self, index_file_path, save_index=True):
+        """
+        Initialize a new index for the given index file path.
+        :param index_file_path: The file path of the index file.
+        :param save_index: Whether to save the index after refreshing it. Defaults to True.
+        """
         self.__index_file_path = index_file_path
         self.__EMPTY_INDEX_JSON = {"profiles": {"active": [], "non_active": []}}
         index_json = self.__load_index_file(index_file_path)
@@ -26,10 +31,12 @@ class ConfigManager:
     # and the non-active profiles
     # Solution
     def get_all_profiles(self):
-        return (
-            self.__new_index_json["profiles"]["active"]
-            + self.__new_index_json["profiles"]["non_active"]
-        )
+        # Get all active profiles
+        active_profiles = self.__new_index_json["profiles"]["active"]
+        # Get all non active profiles
+        non_active_profiles = self.__new_index_json["profiles"]["non_active"]
+        # Concatenate both lists and return
+        return active_profiles + non_active_profiles
 
     # Get active profile. Return a list of object, each object has 2 keys:
     # - profile_name
@@ -61,15 +68,18 @@ class ConfigManager:
 
     # Rename a profile, the old_profile_name could be in both non_active and active list
     def rename_profile(self, old_profile_name, new_profile_name):
+        # Iterate over all profiles
         for profile in (
             self.__new_index_json["profiles"]["active"]
             + self.__new_index_json["profiles"]["non_active"]
         ):
+            # If the profile is found, rename it
             if profile["profile_name"] == old_profile_name:
                 profile["profile_name"] = new_profile_name
                 # If the profile is active, do not rename the config file path
                 # If the profile is non-active, rename the config file path
                 if profile in self.__new_index_json["profiles"]["non_active"]:
+                    # Rename the config file path
                     new_file_path = os.path.expanduser(
                         profile["file_path"].replace(
                             f"clearml-{old_profile_name}.conf",
@@ -78,8 +88,10 @@ class ConfigManager:
                     )
                     os.rename(os.path.expanduser(profile["file_path"]), new_file_path)
                     profile["file_path"] = new_file_path
+                # Save the new index
                 self.save_index()
                 return
+        # If the profile is not found, raise an error
         raise Exception(f"Profile {old_profile_name} does not exist")
 
     def initialize_profile(self, profile_name):
@@ -214,46 +226,39 @@ class ConfigManager:
     def __refresh_index(self, index_json):
         # Scan the home directory
         new_index_json = self.__scan_home_dir()
+
         # If the default profile in index_json is not empty, update the new_index_json with the default profile
         # in index_json
         if len(index_json["profiles"]["active"]) > 0:
             new_index_json["profiles"]["active"] = index_json["profiles"]["active"]
+
         return new_index_json
 
     # Load the json content of the index file, return the json object. If the file
     # is empty or malformed, return an empty json object.
     def __load_index_file(self, file_path):
-        index_file = os.path.expanduser(file_path)
-        if not os.path.exists(index_file) or os.stat(index_file).st_size == 0:
+        index_file_path = os.path.expanduser(file_path)
+        if not os.path.exists(index_file_path) or os.stat(index_file_path).st_size == 0:
             # return an empty json object
             return self.__EMPTY_INDEX_JSON
         else:
             try:
-                with open(index_file, "r") as f:
+                with open(index_file_path, "r") as f:
                     return json.load(f)
             except:
                 return self.__EMPTY_INDEX_JSON
 
-    # Scan the home directory for files that match the criteria:
-    # - the file name ends with .conf
-    # - the file is not a directory
-    # - the file is not a symbolic link
-    # - the file name contains the word clearml
-    # - the file content is in hocon format, using pyhocon library to detect if it is hocon format, throw
-    #   an exception if it is not hocon format
-    # Create a json object for each file, it got 2 keys
-    # - profile name
-    # - file path
-    #
-    # Return a list of json objects. Do not read the index file, just scan the home directory.
-    #
-    # Solution
     def __scan_home_dir(self):
+        # get the home directory
         home_dir = os.path.expanduser("~")
+        # get the list of files in the home directory
         files = os.listdir(home_dir)
+        # create lists to store the active and non-active profiles
         active_profile_list = []
         non_active_profile_list = []
+        # for each file in the home directory
         for file in files:
+            # if the file is a config file
             if (
                 file.endswith(".conf")
                 and not os.path.isdir(file)
@@ -261,15 +266,20 @@ class ConfigManager:
                 and "clearml" in file
             ):
                 try:
+                    # parse the file
                     ConfigFactory.parse_file(f"{home_dir}/{file}")
+                    # if the file is the active profile
                     if file == "clearml.conf":
+                        # add the file to the list of active profiles
                         active_profile_list.append(
                             {
                                 "profile_name": self.__extract_profile_name(file),
                                 "file_path": f"{home_dir}/{file}",
                             }
                         )
+                    # if the file is not the active profile
                     else:
+                        # add the file to the list of non-active profiles
                         non_active_profile_list.append(
                             {
                                 "profile_name": self.__extract_profile_name(file),
@@ -292,7 +302,6 @@ class ConfigManager:
     # Extract profile name from the file name, if the file name is clearml.conf, the profile name should be default
     # If the file name is clearml-<profile_name>.conf, the profile name should be <profile_name>
     # Use regex to extract the profile name
-    # Solution
     def __extract_profile_name(self, file_name):
         if file_name == "clearml.conf":
             return "untitled"

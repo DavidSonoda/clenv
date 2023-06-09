@@ -18,21 +18,24 @@ def config():
 @config.command(help="List all config profiles")
 def list(showpath):
     config_manager = ConfigManager(INDEX_FILE_PATH)
+
+    # If the profile has not been initialized, prompt the user to input a profile name
+    # The default profile name is 'default'
     if not config_manager.profile_has_initialized():
-        # Prompt the user to initalize the profile by inputting a profile name, the default is 'default'
-        # Solution
         profile_name = click.prompt("Please input a profile name", default="default")
         config_manager.initialize_profile(profile_name)
 
     active_profiles = config_manager.get_active_profile()
     non_active_profiles = config_manager.get_non_active_profiles()
+
+    # Print the active profiles
     for profile in active_profiles:
-        # Print the active profile name with '(active)' at the end, print it in green color
         click.echo(click.style(f'{profile["profile_name"]} [active]', fg="green"))
         if showpath:
             click.echo(click.style(f'  {profile["file_path"]}'))
+
+    # Print the non-active profiles
     for profile in non_active_profiles:
-        # Print the non-active profile name, print it in yellow color
         click.echo(click.style(f'{profile["profile_name"]}', fg="yellow"))
         if showpath:
             click.echo(click.style(f'  {profile["file_path"]}'))
@@ -59,7 +62,6 @@ def checkout(profile_name):
 
 # Create a new profile, the profile name is specified by the user
 # If the profile name is already in the index file, print an error message and exit
-# Solution
 @click.argument("profile_name", required=True)
 @click.option("--base", "-b", help="Base profile name")
 @config.command(help="Create a new profile")
@@ -79,14 +81,17 @@ def create(profile_name, base):
 @config.command(name="del", help="Delete a profile")
 def delete(profile_name):
     config_manager = ConfigManager(INDEX_FILE_PATH)
+    # Check if the profile exists
     if not config_manager.has_profile(profile_name=profile_name):
         click.echo(f"Profile {profile_name} does not exist")
         return
+    # Check if the profile is active
     if config_manager.is_active_profile(profile_name):
         click.echo(
             f"Profile {profile_name} is active, only non-active profiles can be deleted"
         )
         return
+    # Delete the profile
     config_manager.delete_profile(profile_name)
     click.echo(f"Profile {profile_name} deleted")
 
@@ -96,14 +101,19 @@ def delete(profile_name):
 @click.argument("old_profile_name", required=True)
 @click.argument("new_profile_name", required=True)
 def rename(old_profile_name, new_profile_name):
+    # Define a ConfigManager object for the index file
     config_manager = ConfigManager(INDEX_FILE_PATH)
+    # If the old profile doesn't exist, print an error message
     if not config_manager.has_profile(profile_name=old_profile_name):
         click.echo(f"Profile {old_profile_name} does not exist")
         return
+    # If the new profile already exists, print an error message
     if config_manager.has_profile(profile_name=new_profile_name):
         click.echo(f"Profile {new_profile_name} already exists")
         return
+    # Rename the profile
     config_manager.rename_profile(old_profile_name, new_profile_name)
+    # Print a message confirming the rename
     click.echo(f"Profile {old_profile_name} renamed to {new_profile_name}")
 
 
@@ -112,13 +122,16 @@ def rename(old_profile_name, new_profile_name):
 @click.argument("base_profile", required=True)
 @config.command(help="Reinitialize the api section of the config file")
 def reinit(base_profile):
+    # Get the configuration from the user.
     click.echo("Please paste your multi-line configuration and press Enter:")
     config = read_multiline()
 
+    # Reinitialize the api section of the config file.
     config_manager = ConfigManager(INDEX_FILE_PATH)
     config_manager.reinitialize_api_config(base_profile, config)
 
 
+# Reads multiple lines of input from the user and returns them as a string.
 def read_multiline():
     lines = []
     while True:

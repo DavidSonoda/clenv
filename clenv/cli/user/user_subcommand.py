@@ -4,10 +4,11 @@ import click
 import bcrypt
 import os, re
 import json
+import base64
 from pyhocon import ConfigFactory, HOCONConverter
 
 
-@click.group(help="user management")
+@click.group(help="Privately hosted clearml server user helper tools")
 def user():
     pass
 
@@ -16,7 +17,6 @@ def user():
 # The command should take a username and a password as arguments,
 # Encrypt the password using UserManager.generate_password() and write the username and encrypted password to the config file
 # The config file should be named after the username and saved to home directory
-# Solution
 @user.command(help="Generate a user password")
 @click.argument("username", required=True)
 @click.argument("password", required=False)
@@ -26,12 +26,16 @@ def genpass(username, password):
             password = click.prompt("Create a password for the user", hide_input=True)
         cipher_pw = generate_password(password)
 
-        config_dict = {"user": {"username": username, "password": cipher_pw.decode()}}
+        config_dict = {
+            "username": username,
+            "password": base64.b64encode(cipher_pw).decode("utf-8"),
+        }
         config = ConfigFactory.from_dict(config_dict)
         # Save the clearml-user.conf file in the home directory
         path = os.path.expanduser(f"~/clearml-server-{username}.conf")
         with open(path, "w") as f:
             f.write(HOCONConverter.to_hocon(config))
+
         click.echo(json.dumps(config_dict, indent=4))
         # Print the file path in green color
         click.echo(
