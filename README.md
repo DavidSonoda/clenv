@@ -1,4 +1,4 @@
-# clenv - Clearml environment profile manager
+# clenv - Unofficial ClearML CLI helper
 
 
 
