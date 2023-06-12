@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="clenv",
-    version="0.0.6",
+    version="0.0.7",
     description="ClearML config profile manager",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -35,5 +35,6 @@ setup(
         "click>=8.1.0",
         "pyhocon==0.3.35",
         "bcrypt>=4.0.0",
+        "GitPython==3.1.31",
     ],
 )
