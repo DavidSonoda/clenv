@@ -36,5 +36,6 @@ setup(
         "pyhocon==0.3.35",
         "bcrypt>=4.0.0",
         "GitPython==3.1.31",
+        "inquirerpy==0.3.4",
     ],
 )
